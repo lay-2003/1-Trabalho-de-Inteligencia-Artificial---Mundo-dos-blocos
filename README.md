@@ -28,7 +28,7 @@ E implementar um planejador capaz de lidar com essas novas restrições.
 * Definição de novas propriedades e relações
 * Modelagem de ações com restrições físicas
 * Resolução manual de cenários
-* Implementação de planejador (Goal Regression + Partial Ordering)
+* Implementação de planejador
 * Comparação entre planejamento manual e automatizado
 
 ---
@@ -60,12 +60,6 @@ TrabalhoIA_MundoBlocos/
 ##  Como Executar
 
 1. Execute:
-
-```bash
-swipl planejador.pl
-```
-
-2. Consulte um cenário:
 
 ```prolog
 ?- resolver_tudo.
