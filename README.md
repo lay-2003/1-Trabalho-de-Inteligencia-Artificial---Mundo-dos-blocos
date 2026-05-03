@@ -68,13 +68,13 @@ swipl planejador.pl
 2. Consulte um cenário:
 
 ```prolog
-?- planejar(EstadoInicial, Objetivo, Plano).
+?- resolver_tudo.
 ```
 
 ---
 
 
-## 👀 Autores
+##  Autores
 
 1. Laysa Siqueira da Silva
 2. Rebeca Agra
