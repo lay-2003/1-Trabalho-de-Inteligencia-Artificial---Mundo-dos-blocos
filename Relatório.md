@@ -1,54 +1,179 @@
+# Relatório Técnico: Desafios na Modelagem Física e Resolução de Planejamento em Prolog
 
-# Relatório de Desenvolvimento: Planejador de Blocos em Prolog
+---
 
 ## 1. Introdução
-Este relatório descreve o desenvolvimento de um sistema de planejamento automático para o problema do "Mundo dos Blocos", utilizando a linguagem Prolog. O desafio consistiu em organizar quatro blocos de diferentes tamanhos em uma régua com intervalo de **0 a 6**.
 
-**Especificações dos Blocos:**
-*   **Bloco A:** Tamanho 1
-*   **Bloco B:** Tamanho 1
-*   **Bloco C:** Tamanho 2
-*   **Bloco D:** Tamanho 3
+O desenvolvimento de um planejador autônomo em Prolog para resolver o problema de empilhamento de blocos em uma régua/mesa revelou-se um desafio computacional e semântico de alta complexidade. O problema exigia não apenas a transição de estados lógicos, mas também a compreensão profunda de restrições físicas espaciais bidimensionais (posição horizontal e nível vertical) e regras de suporte assimétricas.
 
-O diferencial deste projeto foi a necessidade de lidar com blocos que possuem dimensões reais e regras de equilíbrio físico, saindo do modelo tradicional onde todos os blocos são iguais.
+Este relatório documenta as principais dificuldades encontradas durante a modelagem do problema, os obstáculos de interpretação física enfrentados por diferentes Inteligências Artificiais (DeepSeek, ChatGPT, Gemini, BlackBoxAI e Manus) e o processo iterativo que levou à solução final bem-sucedida.
 
 ---
 
-## 2. Desafios e Dificuldades de Implementação
+## 2. Dificuldades na Modelagem Física e Entendimento do Problema
 
-Durante o desenvolvimento, a maior dificuldade não foi encontrar a solução final, mas sim fazer a inteligência artificial "entender" as limitações físicas do mundo real. Vários problemas surgiram no processo:
+A representação de problemas clássicos de blocos (como o *Blocks World*) geralmente assume que os blocos têm o mesmo tamanho e são empilhados em posições discretas e independentes. O problema proposto, no entanto, introduz variáveis contínuas discretizadas (intervalos na régua) e blocos de tamanhos variados:
 
-### 2.1 Movimentação Sem Critério
-Inicialmente, a IA apresentava uma falha grave de lógica: ela tentava mover blocos que estavam na base de uma pilha. Se o objetivo era mover o Bloco C, a IA o retirava do lugar mesmo que os blocos A e B estivessem em cima dele, ignorando completamente que o topo precisava estar livre.
+- $a = 1$
+- $b = 1$
+- $c = 2$
+- $d = 3$
 
-### 2.2 O Fenômeno do "Desaparecimento"
-Em diversas simulações, a IA simplesmente "sumia" com os blocos. Quando encontrava um conflito de espaço ou uma situação difícil de resolver, o algoritmo removia o bloco da lista em vez de movê-lo para um espaço vazio. Houve também casos de "teleportação", onde o bloco saltava de uma posição para outra sem passar pelos passos lógicos necessários.
-
-### 2.3 Preferência por Ordem Alfabética
-Um dos obstáculos mais curiosos foi a tendência da ferramenta em priorizar a ordem alfabética (A, B, C, D). A IA tentava repetidamente mover o bloco "A" apenas por ser o primeiro da lista, mesmo quando a solução óbvia exigia que o bloco "D" fosse movido primeiro para liberar o caminho. Essa "teimosia" causava travamentos e loops, onde a IA ficava movendo o bloco A para lá e para cá, sem progredir no plano real.
+Isso cria um ambiente físico significativamente mais complexo.
 
 ---
 
-## 3. Regras de Controle e Física
+### 2.1 A Complexidade do Suporte Parcial
 
-Para solucionar os problemas citados, foram estabelecidas travas lógicas rigorosas no código:
+A maior dificuldade de entendimento físico residiu na regra de suporte do bloco $d$. Enquanto os blocos menores ($a$, $b$ e $c$) exigiam suporte total sob toda a sua base para não caírem, o bloco $d$ (tamanho 3) possuía a capacidade de se manter estável com apoio parcial.
 
-*   **Verificação de Bloco Livre:** Foi implementada uma regra que impede qualquer movimento se houver um objeto sobre o bloco alvo.
-*   **Apoio do Bloco D:** Por ser o maior bloco (tamanho 3), o Bloco D exige uma base sólida. Ele só pode ser movido se for para a mesa ou se houver dois blocos (como A e B) posicionados de forma a dar suporte às suas extremidades.
-*   **Espaço Geométrico:** A régua de 0 a 6 é restrita. O sistema foi programado para verificar se o espaço de destino está realmente vazio, impedindo que dois blocos ocupem o mesmo intervalo de coordenadas simultaneamente.
+Muitas abordagens iniciais falharam ao tentar aplicar uma regra universal de "cobertura total" para todos os blocos. Quando o bloco $d$ precisava ser movido para a posição $[0, 3]$ apoiado apenas sobre o bloco $c$ (que ocupa $[0, 2]$), a lógica estrita rejeitava o movimento, pois a posição $[2, 3]$ ficaria sem suporte.
+
+O ponto crítico foi compreender que o modelo físico permitia suporte parcial para blocos maiores, desde que existisse apoio válido. Esse entendimento foi essencial para resolver corretamente a Situação 1 e a Situação 3.
 
 ---
 
-## 4. Análise das Situações Resolvidas
+### 2.2 Sobreposição e Níveis Dinâmicos
 
-O planejador foi capaz de resolver as três situações propostas, todas em...
+Outro desafio significativo foi o cálculo dinâmico de níveis.
+
+Diferente de pilhas tradicionais, um bloco movido para um intervalo $[I, F]$ precisa identificar o nível mais alto ocupado por qualquer bloco que se sobreponha a esse intervalo. Isso determina a altura final do bloco após o movimento.
+
+A detecção de colisão exigiu a implementação de uma lógica rigorosa de interseção de intervalos:
+
+$$
+I_1 < F_2 \quad \text{e} \quad I_2 < F_1
+$$
+
+Além disso, foi necessário distinguir claramente:
+
+- Estar na mesa/régua (nível 0)
+- Estar apoiado em outro bloco (nível > 0)
+
+Isso evita estados fisicamente impossíveis, como blocos "flutuando".
+
+---
+
+### 2.3 Espaço de Busca e Explosão Combinatória
+
+Com uma régua de tamanho 6 e 4 blocos de tamanhos diferentes, o número de estados possíveis cresce rapidamente.
+
+A Situação 1, por exemplo, exige até 9 movimentos na solução manual.
+
+Uma busca em profundidade (DFS) simples apresentou problemas como:
+
+- Loops infinitos  
+- Exploração redundante de estados  
+- Não convergência  
+
+A solução foi a utilização do algoritmo **A\*** com heurística baseada no número de blocos fora da posição final, reduzindo drasticamente o espaço de busca.
+
+---
+
+## 3. Análise Comparativa do Desempenho das IAs
+
+O problema foi submetido a diferentes Inteligências Artificiais modernas:
+
+- DeepSeek  
+- ChatGPT  
+- Gemini  
+- Manus
+- BlackBox  
+
+O desempenho inicial foi insatisfatório na maioria dos casos, evidenciando limitações no raciocínio físico e espacial.
+
+---
+
+### 3.1 O Problema da “Alucinação Espacial”
+
+As IAs conseguiram gerar código sintaticamente correto, mas falharam na modelagem física.
+
+Erros comuns incluíram:
+
+- Permitir sobreposição de blocos no mesmo nível  
+- Exigir suporte total para todos os blocos (inclusive $d$)  
+- Gerar posições fora da régua (ex: $[6,9]$)  
+- Falhar na geração de planos válidos (loops ou travamentos)  
+
+Esses problemas mostram que LLMs ainda têm dificuldade com restrições físicas não triviais.
+
+---
+
+### 3.2 A Abordagem do Manus AI
+
+O Manus foi o único sistema que conseguiu chegar a uma solução funcional completa.
+
+O diferencial foi a capacidade de:
+
+- Executar código  
+- Interpretar erros  
+- Iterar automaticamente  
+
+O processo foi iterativo:
+
+1. **Primeira tentativa:** erro de instanciação de variáveis  
+2. **Segunda tentativa:** regra incorreta de suporte para $d$  
+3. **Terceira tentativa:** DFS ineficiente  
+4. **Quarta tentativa:** A* funcional, mas com erros de limite  
+5. **Versão final:** modelo físico correto + restrições + saída interpretável  
+
+A capacidade de depuração foi o fator decisivo.
+
+---
+
+## 4. Diferença entre Planejamento Manual e Planejamento Automatizado (IA)
+
+A diferença central entre os dois métodos está no critério de decisão e na organização das ações.
+
+### 4.1 Ordem das Ações
+
+O planejamento manual segue uma sequência lógica baseada em desmontagem e reconstrução da estrutura.  
+O planejamento automatizado não impõe ordem fixa: as ações são escolhidas conforme reduzem o custo estimado até o objetivo, podendo antecipar ou inverter etapas.
+
+### 4.2 Natureza do Raciocínio
+
+- Manual: baseado em interpretação física do problema  
+- Automatizado: baseado em avaliação de estados no espaço de busca  
+
+O algoritmo não utiliza semântica, apenas compara estados com o objetivo.
+
+### 4.3 Critério de Escolha
+
+- Manual: decisões guiadas por intuição e simplificação  
+- IA: decisões guiadas por função heurística e custo acumulado  
+
+Isso permite que a IA selecione movimentos que não são intuitivos, mas são eficientes.
+
+### 4.4 Soluções Geradas
+
+O planejamento manual tende a produzir uma única sequência válida.  
+A IA pode gerar múltiplos planos equivalentes, pois explora diferentes caminhos no espaço de estados.
+
+### 4.5 Síntese
+
+| Aspecto        | Manual            | Automatizado |
+|----------------|------------------|--------------|
+| Organização    | Sequencial       | Não linear   |
+| Critério       | Intuição         | Heurística   |
+| Flexibilidade  | Baixa            | Alta         |
+| Escalabilidade | Limitada         | Elevada      |
 
 ---
 
 ## 5. Conclusão
 
-O desenvolvimento deste planejador demonstrou que a lógica de programação, por si só, não compreende a física básica. Foi necessário detalhar cada restrição — desde o fato de que um bloco não pode sumir, até a regra de que não se mexe na base de uma pilha. 
+O desenvolvimento deste planejador evidenciou que problemas com:
 
-A superação do viés alfabético da IA e a imposição das regras de "bloco livre" e "apoio estável" foram os pontos chave para que o sistema gerasse movimentos que são, além de logicamente corretos, fisicamente possíveis.
+- raciocínio espacial  
+- restrições físicas  
+- variáveis contínuas discretizadas  
 
----
+ainda representam desafios significativos para sistemas de IA.
+
+Modelos tradicionais baseados apenas em geração de texto tendem a falhar em cenários complexos. Por outro lado, abordagens com execução e feedback iterativo demonstram maior robustez.
+
+O resultado final foi um planejador:
+
+- fisicamente consistente  
+- computacionalmente eficiente  
+- capaz de gerar planos válidos automaticamente  
