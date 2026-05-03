@@ -33,7 +33,7 @@ E implementar um planejador capaz de lidar com essas novas restrições.
 
 ---
 
-## 📁 Estrutura
+## Estrutura
 
 ```
 TrabalhoIA_MundoBlocos/
