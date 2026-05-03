@@ -1,140 +1,54 @@
-#  Relatório – Planejamento no Mundo dos Blocos
+
+# Relatório de Desenvolvimento: Planejador de Blocos em Prolog
 
 ## 1. Introdução
+Este relatório descreve o desenvolvimento de um sistema de planejamento automático para o problema do "Mundo dos Blocos", utilizando a linguagem Prolog. O desafio consistiu em organizar quatro blocos de diferentes tamanhos em uma régua com intervalo de **0 a 6**.
 
-O problema do Mundo dos Blocos é amplamente utilizado como base para estudo de planejamento em Inteligência Artificial. Em sua forma clássica, assume-se que todos os blocos possuem dimensões unitárias e ocupam posições discretas, o que simplifica significativamente o domínio.
+**Especificações dos Blocos:**
+*   **Bloco A:** Tamanho 1
+*   **Bloco B:** Tamanho 1
+*   **Bloco C:** Tamanho 2
+*   **Bloco D:** Tamanho 3
 
-Neste trabalho, é proposta uma extensão desse modelo, considerando:
-
-* blocos com dimensões variáveis
-* ocupação de espaço em uma régua contínua (intervalo de 0 a 6)
-* restrições físicas de estabilidade baseadas no centro geométrico
-
-Essa abordagem torna o problema mais próximo de aplicações reais, como manipulação robótica e empilhamento físico de objetos.
-
----
-
-## 2. Fundamentação Teórica
-
-O planejamento automático utilizado neste trabalho baseia-se nos conceitos apresentados em obras clássicas da área de Inteligência Artificial, especialmente no uso de:
-
-* Lógica de Primeira Ordem para representação do conhecimento
-* Planejamento por regressão de objetivos (Goal Regression)
-* Ordenação parcial de ações
-
-A extensão do domínio tradicional exige a integração de elementos geométricos ao modelo simbólico, caracterizando um domínio híbrido.
+O diferencial deste projeto foi a necessidade de lidar com blocos que possuem dimensões reais e regras de equilíbrio físico, saindo do modelo tradicional onde todos os blocos são iguais.
 
 ---
 
-## 3. Representação do Conhecimento
+## 2. Desafios e Dificuldades de Implementação
 
-### 3.1 Objetos e Propriedades
+Durante o desenvolvimento, a maior dificuldade não foi encontrar a solução final, mas sim fazer a inteligência artificial "entender" as limitações físicas do mundo real. Vários problemas surgiram no processo:
 
-Os blocos são definidos com propriedades físicas:
+### 2.1 Movimentação Sem Critério
+Inicialmente, a IA apresentava uma falha grave de lógica: ela tentava mover blocos que estavam na base de uma pilha. Se o objetivo era mover o Bloco C, a IA o retirava do lugar mesmo que os blocos A e B estivessem em cima dele, ignorando completamente que o topo precisava estar livre.
 
-* `largura(bloco, valor)`
-* posição inicial na régua: `pos(bloco, x)`
+### 2.2 O Fenômeno do "Desaparecimento"
+Em diversas simulações, a IA simplesmente "sumia" com os blocos. Quando encontrava um conflito de espaço ou uma situação difícil de resolver, o algoritmo removia o bloco da lista em vez de movê-lo para um espaço vazio. Houve também casos de "teleportação", onde o bloco saltava de uma posição para outra sem passar pelos passos lógicos necessários.
 
-Cada bloco ocupa um intervalo contínuo dado por:
-
-```
-[início, início + largura]
-```
+### 2.3 Preferência por Ordem Alfabética
+Um dos obstáculos mais curiosos foi a tendência da ferramenta em priorizar a ordem alfabética (A, B, C, D). A IA tentava repetidamente mover o bloco "A" apenas por ser o primeiro da lista, mesmo quando a solução óbvia exigia que o bloco "D" fosse movido primeiro para liberar o caminho. Essa "teimosia" causava travamentos e loops, onde a IA ficava movendo o bloco A para lá e para cá, sem progredir no plano real.
 
 ---
 
-### 3.2 Relações Espaciais
+## 3. Regras de Controle e Física
 
-As principais relações utilizadas são:
+Para solucionar os problemas citados, foram estabelecidas travas lógicas rigorosas no código:
 
-* `sobre(X, Y)` → bloco X está sobre Y
-* `pos(X, P)` → posição inicial do bloco X na régua
-
----
-
-### 3.3 Centro Geométrico
-
-O centro de um bloco é definido como:
-
-```
-centro = (início + fim) / 2
-```
-
-Essa definição é essencial para avaliação de estabilidade.
+*   **Verificação de Bloco Livre:** Foi implementada uma regra que impede qualquer movimento se houver um objeto sobre o bloco alvo.
+*   **Apoio do Bloco D:** Por ser o maior bloco (tamanho 3), o Bloco D exige uma base sólida. Ele só pode ser movido se for para a mesa ou se houver dois blocos (como A e B) posicionados de forma a dar suporte às suas extremidades.
+*   **Espaço Geométrico:** A régua de 0 a 6 é restrita. O sistema foi programado para verificar se o espaço de destino está realmente vazio, impedindo que dois blocos ocupem o mesmo intervalo de coordenadas simultaneamente.
 
 ---
 
-### 3.4 Estabilidade
+## 4. Análise das Situações Resolvidas
 
-A estabilidade é garantida quando o centro geométrico do bloco superior está contido dentro do intervalo do bloco inferior:
-
-```
-centro(X) ∈ intervalo(Y)
-```
-
-Essa restrição impede configurações fisicamente impossíveis.
+O planejador foi capaz de resolver as três situações propostas, todas em...
 
 ---
 
-## 4. Ações do Domínio
+## 5. Conclusão
 
-A principal ação considerada é:
+O desenvolvimento deste planejador demonstrou que a lógica de programação, por si só, não compreende a física básica. Foi necessário detalhar cada restrição — desde o fato de que um bloco não pode sumir, até a regra de que não se mexe na base de uma pilha. 
 
-### mover(bloco, destino, posição)
-
-#### Pré-condições:
-
-* o bloco está livre
-* o destino está livre ou é a mesa
-* a nova posição está dentro da régua (0 a 6)
-* a configuração resultante é estável
-
-#### Efeitos:
-
-* atualização da relação `sobre`
-* atualização da posição `pos`
+A superação do viés alfabético da IA e a imposição das regras de "bloco livre" e "apoio estável" foram os pontos chave para que o sistema gerasse movimentos que são, além de logicamente corretos, fisicamente possíveis.
 
 ---
-
-
-## 5. Planejamento Automatizado
-
-Foi implementado um planejador em Prolog baseado em busca no espaço de estados, incorporando:
-
-* verificação de estabilidade geométrica
-* restrições de posição contínua
-* controle de estados visitados para evitar ciclos
-
-O planejador gera sequências de ações válidas a partir de um estado inicial até um objetivo definido.
-
----
-
-## 6. Resultados
-
-Os testes foram realizados para três cenários distintos (Situação 1 a Situação 3).
-
-### Observações:
-
-* O planejador conseguiu gerar planos válidos em todos os cenários
-* A inclusão da posição contínua aumentou significativamente o espaço de busca
-* Restrições geométricas impediram soluções inválidas fisicamente
-
-
-## 7. Discussão
-
-A introdução de dimensões variáveis e espaço contínuo transforma o problema clássico em um domínio mais complexo.
-
-A presença de restrições geométricas exige validações adicionais durante o planejamento, aumentando o custo computacional.
-
-Esse tipo de modelagem é essencial para aproximar o planejamento simbólico de aplicações reais.
-
----
-
-## 10. Conclusão
-
-O trabalho demonstrou que:
-
-* é possível estender o Mundo dos Blocos para cenários mais realistas
-* a inclusão de geometria aumenta significativamente a complexidade
-* planejadores automatizados são mais adequados para lidar com essas restrições
-
