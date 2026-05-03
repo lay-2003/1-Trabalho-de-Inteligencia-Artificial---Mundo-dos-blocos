@@ -116,7 +116,7 @@ Isso permitiu:
 - evitar caminhos desnecessários  
 ---
 
-## 5. Análise das Inteligências Artificiais
+## 4. Análise das Inteligências Artificiais
 
 Durante o desenvolvimento, diversas IAs foram utilizadas como apoio:
 
@@ -159,7 +159,7 @@ Processo observado:
 
 ---
 
-## 6. Planejamento Manual vs Automatizado
+## 5. Planejamento Manual vs Automatizado
 
 | Aspecto        | Manual            | IA |
 |----------------|------------------|----|
@@ -170,7 +170,7 @@ Processo observado:
 
 ---
 
-## 7. Conclusão
+## 6. Conclusão
 
 O desenvolvimento deste trabalho evidenciou que a modelagem de problemas envolvendo restrições físicas e raciocínio espacial exige um nível de detalhamento significativamente maior do que aquele normalmente empregado em problemas clássicos de planejamento. A introdução de blocos com diferentes dimensões e a necessidade de representar intervalos contínuos na régua tornaram o problema mais próximo de cenários reais, onde fatores como suporte, estabilidade e ocupação espacial precisam ser rigorosamente considerados.
 
