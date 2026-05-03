@@ -1,5 +1,5 @@
-# 📘 Relatório Técnico  
-## Planejamento no Mundo dos Blocos com Dimensões Variáveis
+# Relatório Técnico  
+## Desafios na Modelagem Física e Resolução de Planejamento em Prolog
 
 
 ## 1. Introdução
