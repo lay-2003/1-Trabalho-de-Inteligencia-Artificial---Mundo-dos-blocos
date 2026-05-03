@@ -166,5 +166,3 @@ resolver_tudo :-
     estado_inicial_s2(EI2), estado_final_s2(EF2), resolver(2, EI2, EF2),
     estado_inicial_s3(EI3), estado_final_s3(EF3), resolver(3, EI3, EF3).
 
-% Removida a diretiva de inicialização automática para evitar erros de permissão em alguns ambientes
-% O usuário pode chamar resolver_tudo. manualmente ou via linha de comando.
