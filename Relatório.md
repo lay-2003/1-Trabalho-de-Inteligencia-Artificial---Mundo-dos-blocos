@@ -1,179 +1,297 @@
-# Relatório Técnico: Desafios na Modelagem Física e Resolução de Planejamento em Prolog
+# 📘 Relatório Técnico  
+## Planejamento no Mundo dos Blocos com Dimensões Variáveis
 
----
 
 ## 1. Introdução
 
-O desenvolvimento de um planejador autônomo em Prolog para resolver o problema de empilhamento de blocos em uma régua/mesa revelou-se um desafio computacional e semântico de alta complexidade. O problema exigia não apenas a transição de estados lógicos, mas também a compreensão profunda de restrições físicas espaciais bidimensionais (posição horizontal e nível vertical) e regras de suporte assimétricas.
+O desenvolvimento de um planejador autônomo em Prolog para resolver o problema de empilhamento de blocos em uma régua revelou-se um desafio significativamente mais complexo do que o problema clássico conhecido como *Blocks World*.
 
-Este relatório documenta as principais dificuldades encontradas durante a modelagem do problema, os obstáculos de interpretação física enfrentados por diferentes Inteligências Artificiais (DeepSeek, ChatGPT, Gemini, BlackBoxAI e Manus) e o processo iterativo que levou à solução final bem-sucedida.
+Diferentemente do modelo tradicional, onde todos os blocos possuem o mesmo tamanho e ocupam posições discretas independentes, o cenário proposto introduz características adicionais que aumentam substancialmente a complexidade do problema, como:
 
----
+- blocos com dimensões diferentes  
+- ocupação de intervalos na régua  
+- restrições geométricas reais  
+- dependência de suporte físico  
 
-## 2. Dificuldades na Modelagem Física e Entendimento do Problema
+Nesse contexto, o problema deixa de ser apenas simbólico e passa a envolver também raciocínio espacial e físico. Cada ação executada deve não apenas levar o sistema mais próximo do objetivo, mas também garantir que o estado resultante seja fisicamente válido.
 
-A representação de problemas clássicos de blocos (como o *Blocks World*) geralmente assume que os blocos têm o mesmo tamanho e são empilhados em posições discretas e independentes. O problema proposto, no entanto, introduz variáveis contínuas discretizadas (intervalos na régua) e blocos de tamanhos variados:
-
-- $a = 1$
-- $b = 1$
-- $c = 2$
-- $d = 3$
-
-Isso cria um ambiente físico significativamente mais complexo.
+Assim, o desenvolvimento da solução exigiu não apenas conhecimento em planejamento automático, mas também uma modelagem cuidadosa das restrições do ambiente.
 
 ---
 
-### 2.1 A Complexidade do Suporte Parcial
+## 2. Modelagem do Problema
 
-A maior dificuldade de entendimento físico residiu na regra de suporte do bloco $d$. Enquanto os blocos menores ($a$, $b$ e $c$) exigiam suporte total sob toda a sua base para não caírem, o bloco $d$ (tamanho 3) possuía a capacidade de se manter estável com apoio parcial.
+### 2.1 Blocos e Dimensões
 
-Muitas abordagens iniciais falharam ao tentar aplicar uma regra universal de "cobertura total" para todos os blocos. Quando o bloco $d$ precisava ser movido para a posição $[0, 3]$ apoiado apenas sobre o bloco $c$ (que ocupa $[0, 2]$), a lógica estrita rejeitava o movimento, pois a posição $[2, 3]$ ficaria sem suporte.
-
-O ponto crítico foi compreender que o modelo físico permitia suporte parcial para blocos maiores, desde que existisse apoio válido. Esse entendimento foi essencial para resolver corretamente a Situação 1 e a Situação 3.
-
----
-
-### 2.2 Sobreposição e Níveis Dinâmicos
-
-Outro desafio significativo foi o cálculo dinâmico de níveis.
-
-Diferente de pilhas tradicionais, um bloco movido para um intervalo $[I, F]$ precisa identificar o nível mais alto ocupado por qualquer bloco que se sobreponha a esse intervalo. Isso determina a altura final do bloco após o movimento.
-
-A detecção de colisão exigiu a implementação de uma lógica rigorosa de interseção de intervalos:
-
-$$
-I_1 < F_2 \quad \text{e} \quad I_2 < F_1
-$$
-
-Além disso, foi necessário distinguir claramente:
-
-- Estar na mesa/régua (nível 0)
-- Estar apoiado em outro bloco (nível > 0)
-
-Isso evita estados fisicamente impossíveis, como blocos "flutuando".
+| Bloco | Tamanho |
+|------|--------|
+| a    | 1      |
+| b    | 1      |
+| c    | 2      |
+| d    | 3      |
 
 ---
 
-### 2.3 Espaço de Busca e Explosão Combinatória
+### 2.2 Régua
 
-Com uma régua de tamanho 6 e 4 blocos de tamanhos diferentes, o número de estados possíveis cresce rapidamente.
+A régua possui posições de 0 a 6:
 
-A Situação 1, por exemplo, exige até 9 movimentos na solução manual.
+$$0 ─── 1 ─── 2 ─── 3 ─── 4 ─── 5 ─── 6$$
 
-Uma busca em profundidade (DFS) simples apresentou problemas como:
+Cada bloco ocupa um intervalo contínuo:
 
-- Loops infinitos  
-- Exploração redundante de estados  
-- Não convergência  
-
-A solução foi a utilização do algoritmo **A\*** com heurística baseada no número de blocos fora da posição final, reduzindo drasticamente o espaço de busca.
+- `a`: (x, x+1)  
+- `b`: (x, x+1)  
+- `c`: (x, x+2)  
+- `d`: (x, x+3)  
 
 ---
 
-## 3. Análise Comparativa do Desempenho das IAs
+## 3. Dificuldades na Modelagem Física
 
-O problema foi submetido a diferentes Inteligências Artificiais modernas:
+### 3.1 Suporte Parcial
 
-- DeepSeek  
+Uma das principais dificuldades foi a definição correta das regras de suporte entre os blocos.
+
+Inicialmente, foi assumido que todos os blocos precisariam de suporte total sob toda a sua base. No entanto, essa abordagem se mostrou incorreta ao analisar o comportamento do bloco `d`, que possui maior dimensão.
+
+#### Exemplo do problema:
+$c: [0–2]$
+
+$d: [0–3]$
+
+Nesse caso, parte de `d` não estaria apoiada sobre `c`. Um modelo rígido rejeitaria esse estado, mas o cenário proposto permite suporte parcial para blocos maiores.
+
+#### Conclusão:
+
+- blocos menores → exigem suporte completo  
+- blocos maiores → podem ter suporte parcial  
+
+Essa distinção foi essencial para corrigir a modelagem e permitir a geração de planos válidos.
+
+---
+
+### 3.2 Sobreposição de Intervalos
+
+Para garantir que blocos não ocupem o mesmo espaço indevidamente, foi necessário implementar uma verificação de interseção de intervalos.
+
+A condição utilizada foi:
+
+$$ I_1 < F_2 \quad \text{e} \quad I_2 < F_1 $$
+
+Essa regra permite identificar quando dois blocos:
+
+- se sobrepõem  
+- podem servir de suporte  
+- entram em colisão  
+
+---
+
+### 3.3 Níveis Dinâmicos
+
+Outro desafio importante foi o cálculo do nível (altura) dos blocos.
+
+Diferente do modelo clássico, o nível não é fixo. Ele depende da altura máxima dos blocos que ocupam a região de destino.
+
+#### Exemplo:
+Região destino: 
+$[4–6]$
+
+Se existir:
+`c` no nível 1 e `d` no nível 0 → novo bloco será colocado no nível 2
+
+Sem esse cálculo, o sistema pode gerar estados inválidos, como:
+
+- blocos flutuando  
+- blocos atravessando outros  
+
+---
+
+### 3.4 Explosão Combinatória
+
+Com múltiplos blocos e várias posições possíveis, o espaço de estados cresce rapidamente.
+
+Problemas encontrados com busca em profundidade $(DFS)$:
+
+- loops infinitos  
+- repetição de estados  
+- baixa eficiência  
+
+#### Solução adotada:
+
+Uso do algoritmo **A\*** com heurística baseada em:
+
+> número de blocos fora da posição final
+
+Isso permitiu:
+
+- reduzir o espaço de busca  
+- melhorar a eficiência  
+- evitar caminhos desnecessários  
+
+---
+
+## 4. Situação 2 – Planejamento Manual
+
+
+### Estado Inicial (S0)
+Região 0–2:
+
+$a$ $b$
+
+$c$
+
+Região 3–6:
+
+$d$
+
+
+Representação:
+
+- `a` e `b` estão sobre `c`
+- `c`: ocupa (0–2)
+- `d`: ocupa (3–6)
+
+---
+
+### Estado Objetivo (S5)
+   $a$  $b$
+  
+   $c$
+   
+   $d$
+
+   
+Intervalos desejados:
+
+- `a`: (4–5)  
+- `b`: (5–6)  
+- `c`: (4–6)  
+- `d`: (3–6)  
+
+---
+
+## Plano de Ações
+
+### Passo 1
+
+Remover `a` de cima de `c`:
+
+$move(a, c → mesa[0–1])$
+
+
+### Passo 2
+
+Remover `b`:
+
+$move(b, c → mesa[2–3])$
+
+
+### Estado intermediário
+$a: [0–1]$
+
+$b: [2–3]$
+
+$c: [0–2]$
+
+$d: [3–6]$
+
+
+### Passo 3
+
+Mover `c` para cima de `d`:
+
+$move(c, mesa → d[4–6])$
+
+
+### Passo 4
+
+Mover `a`:
+
+$move(a, mesa → c[4–5])$
+
+
+### Passo 5
+
+Mover `b`:
+
+$move(b, mesa → c[5–6])$
+
+
+### Estado Final
+$a: [4–5]$
+
+$b: [5–6]$
+
+$c: [4–6]$
+
+$d: [3–6]$
+
+
+Objetivo alcançado com sucesso.
+
+---
+
+## 5. Análise das Inteligências Artificiais
+
+Durante o desenvolvimento, diversas IAs foram utilizadas como apoio:
+
 - ChatGPT  
 - Gemini  
-- Manus
+- DeepSeek  
+- Manus  
 - BlackBox  
 
-O desempenho inicial foi insatisfatório na maioria dos casos, evidenciando limitações no raciocínio físico e espacial.
+---
+
+### Problema: “Alucinação Espacial”
+
+As IAs apresentaram dificuldades na modelagem física, gerando erros como:
+
+- sobreposição inválida de blocos  
+- posições fora da régua  
+- suporte incorreto  
+- planos inconsistentes  
+
+Isso evidencia limitações no raciocínio espacial.
 
 ---
 
-### 3.1 O Problema da “Alucinação Espacial”
+### Destaque: Manus
 
-As IAs conseguiram gerar código sintaticamente correto, mas falharam na modelagem física.
+O Manus se destacou por sua capacidade de:
 
-Erros comuns incluíram:
+- executar código  
+- detectar erros  
+- iterar automaticamente  
 
-- Permitir sobreposição de blocos no mesmo nível  
-- Exigir suporte total para todos os blocos (inclusive $d$)  
-- Gerar posições fora da régua (ex: $[6,9]$)  
-- Falhar na geração de planos válidos (loops ou travamentos)  
+Processo observado:
 
-Esses problemas mostram que LLMs ainda têm dificuldade com restrições físicas não triviais.
-
----
-
-### 3.2 A Abordagem do Manus AI
-
-O Manus foi o único sistema que conseguiu chegar a uma solução funcional completa.
-
-O diferencial foi a capacidade de:
-
-- Executar código  
-- Interpretar erros  
-- Iterar automaticamente  
-
-O processo foi iterativo:
-
-1. **Primeira tentativa:** erro de instanciação de variáveis  
-2. **Segunda tentativa:** regra incorreta de suporte para $d$  
-3. **Terceira tentativa:** DFS ineficiente  
-4. **Quarta tentativa:** A* funcional, mas com erros de limite  
-5. **Versão final:** modelo físico correto + restrições + saída interpretável  
-
-A capacidade de depuração foi o fator decisivo.
+1. erro de variáveis  
+2. erro de suporte  
+3. busca ineficiente  
+4. ajuste com A*  
+5. solução final correta  
 
 ---
 
-## 4. Diferença entre Planejamento Manual e Planejamento Automatizado (IA)
+## 6. Planejamento Manual vs Automatizado
 
-A diferença central entre os dois métodos está no critério de decisão e na organização das ações.
-
-### 4.1 Ordem das Ações
-
-O planejamento manual segue uma sequência lógica baseada em desmontagem e reconstrução da estrutura.  
-O planejamento automatizado não impõe ordem fixa: as ações são escolhidas conforme reduzem o custo estimado até o objetivo, podendo antecipar ou inverter etapas.
-
-### 4.2 Natureza do Raciocínio
-
-- Manual: baseado em interpretação física do problema  
-- Automatizado: baseado em avaliação de estados no espaço de busca  
-
-O algoritmo não utiliza semântica, apenas compara estados com o objetivo.
-
-### 4.3 Critério de Escolha
-
-- Manual: decisões guiadas por intuição e simplificação  
-- IA: decisões guiadas por função heurística e custo acumulado  
-
-Isso permite que a IA selecione movimentos que não são intuitivos, mas são eficientes.
-
-### 4.4 Soluções Geradas
-
-O planejamento manual tende a produzir uma única sequência válida.  
-A IA pode gerar múltiplos planos equivalentes, pois explora diferentes caminhos no espaço de estados.
-
-### 4.5 Síntese
-
-| Aspecto        | Manual            | Automatizado |
-|----------------|------------------|--------------|
-| Organização    | Sequencial       | Não linear   |
-| Critério       | Intuição         | Heurística   |
-| Flexibilidade  | Baixa            | Alta         |
-| Escalabilidade | Limitada         | Elevada      |
+| Aspecto        | Manual            | IA |
+|----------------|------------------|----|
+| Organização    | Sequencial       | Não linear |
+| Decisão        | Intuição         | Heurística |
+| Flexibilidade  | Baixa            | Alta |
+| Escalabilidade | Limitada         | Alta |
 
 ---
 
-## 5. Conclusão
+## 7. Conclusão
 
-O desenvolvimento deste planejador evidenciou que problemas com:
+O desenvolvimento deste trabalho evidenciou que a modelagem de problemas envolvendo restrições físicas e raciocínio espacial exige um nível de detalhamento significativamente maior do que aquele normalmente empregado em problemas clássicos de planejamento. A introdução de blocos com diferentes dimensões e a necessidade de representar intervalos contínuos na régua tornaram o problema mais próximo de cenários reais, onde fatores como suporte, estabilidade e ocupação espacial precisam ser rigorosamente considerados.
 
-- raciocínio espacial  
-- restrições físicas  
-- variáveis contínuas discretizadas  
+Ao longo do processo, ficou evidente que abordagens baseadas apenas em manipulação simbólica não são suficientes para capturar toda a complexidade do ambiente. A dificuldade enfrentada por diferentes sistemas de Inteligência Artificial em produzir soluções fisicamente válidas demonstra que ainda existem limitações importantes no tratamento de restrições espaciais mais sofisticadas.
 
-ainda representam desafios significativos para sistemas de IA.
+Por outro lado, métodos que combinam geração de soluções com execução e validação iterativa mostraram-se mais eficazes, pois permitem identificar inconsistências e refinar progressivamente o modelo. Esse processo contribui para a construção de soluções mais robustas e confiáveis.
 
-Modelos tradicionais baseados apenas em geração de texto tendem a falhar em cenários complexos. Por outro lado, abordagens com execução e feedback iterativo demonstram maior robustez.
-
-O resultado final foi um planejador:
-
-- fisicamente consistente  
-- computacionalmente eficiente  
-- capaz de gerar planos válidos automaticamente  
+O resultado final foi um planejador capaz de representar corretamente o ambiente e gerar planos válidos respeitando todas as restrições impostas, demonstrando a importância de uma modelagem cuidadosa em problemas de planejamento em Inteligência Artificial.
