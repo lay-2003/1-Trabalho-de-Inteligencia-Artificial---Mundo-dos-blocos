@@ -71,7 +71,7 @@ TrabalhoIA_MundoBlocos/
 ##  Autores
 
 1. Laysa Siqueira da Silva
-2. Rebeca Agra
-3. Marinaldo Júnior
+2. Marinaldo Júnior
+3. Rebeca Agra D'Angelo
 
 
